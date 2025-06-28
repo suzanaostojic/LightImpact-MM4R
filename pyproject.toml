@@ -1,0 +1,17 @@
+[project]
+name = "lightimpact"
+version = "0.1.0"
+description = "A Python library for calculating mass-induced fuel and electricity consumption of lightweight automotive components"
+authors = [
+    { name="Suzana Ostojic", email="suzana.ostojic@inab.rwth-aachen.de" }
+]
+readme = "README.md"
+license = { text = "MIT" }
+dependencies = [
+    "numpy",
+    "pandas"
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
