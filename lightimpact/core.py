@@ -32,7 +32,7 @@ VEHICLE_PARAMS = {
 # WLTP driving cycle specific parameters (WLTP class 3b parameters, need to be adapted for specific driving cycle and class)
 WLTP_PARAMS = {
     "ds": 23.26,              # Distance covered by WLTP class 3b [km]
-    "roll_pos_factor": 0.55,   # WLTP rolling resistance share during traction [-]
+    "roll_pos_factor": 0.55,  # WLTP rolling resistance share during traction [-]
     "c_fuel_WLTP": 10.35,     # Certified fuel consumption [L/100km]
     "c_el_WLTP": 17.9         # Certified electricity consumption [kWh/100km]
 }

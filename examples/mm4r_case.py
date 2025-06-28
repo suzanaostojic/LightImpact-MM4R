@@ -4,7 +4,7 @@ import numpy as np
 # Load and Prepare WLTP data
 # The WLTP dataset must include: 'Time','Speed','Acceleration' 
 df = pd.read_csv("WLTP data/Time-Speed-Profile_WLTP_Class3b.csv") 
-df["v"] = df["Speed (km/h)"] # velocity data [m/s]
+df["v"] = df["Speed (m/s)"] # velocity data [m/s]
 df["a"] = df["Acceleration (m/s2)"] # acceleration data [m/s2]
 df["dt"] = df["Time (s)"].diff().fillna(1) # calculate time steps dt [s]
 
