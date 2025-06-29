@@ -4,10 +4,10 @@ import numpy as np
 # ===============================
 # LightImpact Core Module
 # ===============================
-# This module calculates the Energy Reduction Value (ERV) for both ICV and EV vehicles
-# Structure:
-# - Input: WLTP cycle time-speed CSV
-# - Output: ERV for ICV and EV
+# This module provides a scientific method to compute the Energy Reduction Value (ERV) for Internal Combustion Vehicles (ICVs) and Electric Vehicles (EVs), based on a WLTP driving cycle input.
+# Structure_
+# -Inputs:CSV file with time-series driving data (speed [m/s], acceleration [m/s²], time [s]); default or user-defined vehicle/ driving cycle parameters
+# -Outputs: ERV for ICV and EV
 # ===============================
 
 # Fixed physical constants and parameters
@@ -44,12 +44,12 @@ def load_wltp(filepath):
     except FileNotFoundError:
         raise FileNotFoundError(f"File not found: {filepath}")
 
-    required_cols = {"Speed (m/s)", "Acceleration (m/s²)", "Time (s)"}
+    required_cols = {"Speed (m/s)", "Acceleration (m/s2)", "Time (s)"}
     if not required_cols.issubset(df.columns):
         raise ValueError(f"CSV must contain the following columns: {required_cols}")
 
     df["v"] = df["Speed (m/s)"].astype(float) # velocity data [m/s]
-    df["a"] = df["Acceleration (m/s²)"].astype(float) # acceleration data [m/s2]
+    df["a"] = df["Acceleration (m/s2)"].astype(float) # acceleration data [m/s2]
     df["dt"] = df["Time (s)"].diff().fillna(1) # calculate time steps dt [s]
 
     df_tractive = df[(df["a"] > 0) & (df["v"] > 0)].copy() # filter for positve tractive phases (a > 0, v > 0) 
@@ -58,9 +58,6 @@ def load_wltp(filepath):
 
 # ERV calculations
 def calculate_erv(df_tractive, df_braking, p):
-   
-    # Merge parameter sets
-    p = {**FIXED_PARAMS, **VEHICLE_PARAMS, **WLTP_PARAMS,}
 
     # Unpack parameters
     m_ref = p["m_ref"]
