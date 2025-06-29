@@ -48,11 +48,12 @@ def load_wltp(filepath):
     if not required_cols.issubset(df.columns):
         raise ValueError(f"CSV must contain the following columns: {required_cols}")
 
-    df["v"] = df["Speed (m/s)"].astype(float)
-    df["a"] = df["Acceleration (m/s²)"].astype(float)
-    df["dt"] = df["Time (s)"].diff().fillna(1)
-    df_tractive = df[(df["a"] > 0) & (df["v"] > 0)].copy()
-    df_braking = df[(df["a"] < 0) & (df["v"] > 0)].copy()
+    df["v"] = df["Speed (m/s)"].astype(float) # velocity data [m/s]
+    df["a"] = df["Acceleration (m/s²)"].astype(float) # acceleration data [m/s2]
+    df["dt"] = df["Time (s)"].diff().fillna(1) # calculate time steps dt [s]
+
+    df_tractive = df[(df["a"] > 0) & (df["v"] > 0)].copy() # filter for positve tractive phases (a > 0, v > 0) 
+    df_braking = df[(df["a"] < 0) & (df["v"] > 0)].copy() # filter for negative braking phases (a < 0, v > 0)
     return df, df_tractive, df_braking
 
 # ERV calculations
@@ -78,47 +79,47 @@ def calculate_erv(df_tractive, df_braking, p):
     c_el_WLTP = p["c_el_WLTP"]
     LHV_fuel = p["LHV_fuel"]
 
-    # Mechanical Work ICV (for a standard mass of 100kg and distance of 100km)
-    W_R = m_ref * g * f_R * ds * 1000 / 1e6
-    a_v_integral = np.sum(df_tractive["a"] * df_tractive["v"] * df_tractive["dt"])
-    W_A = m_ref * a_v_integral / 1e6
-    W_Rot = m_ref * f_Rot * a_v_integral / 1e6
+    # Compute Mechanical Work ICV (for a standard mass of 100kg and distance of 100km)
+    W_R = m_ref * g * f_R * ds * 1000 / 1e6 # Rolling resistance Work [MJ]
+    a_v_integral = np.sum(df_tractive["a"] * df_tractive["v"] * df_tractive["dt"]) # integral a*v*dt for positive traction phases 
+    W_A = m_ref * a_v_integral / 1e6 # Acceleration Work [MJ]
+    W_Rot = m_ref * f_Rot * a_v_integral / 1e6 # Rotational Work [MJ]
 
-    v3_integral_tractive = np.sum(df_tractive["v"]**3 * df_tractive["dt"])
-    W_L = 0.5 * rho_air * cw * A_frontal * v3_integral_tractive / 1e6
+    v3_integral_tractive = np.sum(df_tractive["v"]**3 * df_tractive["dt"]) # integral v^3*dt for positive traction phases 
+    W_L = 0.5 * rho_air * cw * A_frontal * v3_integral_tractive / 1e6 # Aerodynamic Work [MJ]
 
-    W_mech_ICV_100kg_100km = ((roll_pos_factor * W_R) + W_A + W_Rot) * (ds_ref / ds)
+    W_mech_ICV_100kg_100km = ((roll_pos_factor * W_R) + W_A + W_Rot) * (ds_ref / ds) # Total mechanical Work ICV (100kg,100km)
 
-    # Mechanical Work EV (for a standard mass of 100kg and distance of 100km)
+    # Compute Mechanical Work EV (for a standard mass of 100kg and distance of 100km)
     W_R_brake = m_ref * g * f_R * ds * 1000 / 1e6
-    a_v_brake_integral = np.sum(df_braking["a"] * df_braking["v"] * df_braking["dt"])
-    W_A_brake = m_ref * a_v_brake_integral / 1e6
-    W_Rot_brake = m_ref * f_Rot * a_v_brake_integral / 1e6
-    v3_integral_brake = np.sum(df_braking["v"]**3 * df_braking["dt"])
-    W_L_brake = 0.5 * rho_air * cw * A_frontal * v3_integral_brake / 1e6
+    a_v_brake_integral = np.sum(df_braking["a"] * df_braking["v"] * df_braking["dt"]) # integral a*v*dt for negative braking phases 
+    W_A_brake = m_ref * a_v_brake_integral / 1e6 # Regenerative Acceleration Work [MJ]
+    W_Rot_brake = m_ref * f_Rot * a_v_brake_integral / 1e6 # Regenerative Rotational Work [MJ]
+    v3_integral_brake = np.sum(df_braking["v"]**3 * df_braking["dt"]) #integral v^3*dt for negative braking phases
+    W_L_brake = 0.5 * rho_air * cw * A_frontal * v3_integral_brake / 1e6 # Regenerative Aerodynamic Work [MJ]
 
     E_b = abs(W_R_brake + W_A_brake + W_Rot_brake + W_L_brake)
     phi = E_b / (m_ref * a_v_integral)
-    W_A_EV = W_A * (1 - (phi * mu))
+    W_A_EV = W_A * (1 - (phi * mu)) # Acceleration Work EV [MJ]
 
-    W_mech_EV_100kg_100km = ((roll_pos_factor * W_R) + W_A_EV + W_Rot) * (ds_ref / ds)
+    W_mech_EV_100kg_100km = ((roll_pos_factor * W_R) + W_A_EV + W_Rot) * (ds_ref / ds) # Total mechanical Work EV (100kg,100km)
 
-    # Total Mechanical Work (total vehicle mass)
-    W_R_total = m_vehicle * g * f_R * ds * 1000 / 1e6
-    W_A_total = m_vehicle * a_v_integral / 1e6
-    W_Rot_total = m_vehicle * f_Rot * a_v_integral / 1e6
+    # Compute Total Mechanical Work for ICV and EV (total vehicle mass)
+    W_R_total = m_vehicle * g * f_R * ds * 1000 / 1e6 # Rolling resistance Work (entire vehicle) [MJ]
+    W_A_total = m_vehicle * a_v_integral / 1e6 # Acceleration Work (entire vehicle) [MJ]
+    W_Rot_total = m_vehicle * f_Rot * a_v_integral / 1e6 # Rotational Work (entire vehicle) [MJ]
 
-    W_mech_ICV_total_100km = ((roll_pos_factor * W_R_total) + W_A_total + W_Rot_total + W_L) * (ds_ref / ds)
+    W_mech_ICV_total_100km = ((roll_pos_factor * W_R_total) + W_A_total + W_Rot_total + W_L) * (ds_ref / ds) # Total mechanical Work ICV (entire vehicle)
 
-    W_R_brake_total = m_vehicle * g * f_R * ds * 1000 / 1e6
-    W_A_brake_total = m_vehicle * a_v_brake_integral / 1e6
-    W_Rot_brake_total = m_vehicle * f_Rot * a_v_brake_integral / 1e6
+    W_R_brake_total = m_vehicle * g * f_R * ds * 1000 / 1e6 # Regenerative Rolling resistance Work (entire vehicle) [MJ]
+    W_A_brake_total = m_vehicle * a_v_brake_integral / 1e6 # Regenerative Acceleration Work (entire vehicle) [MJ]
+    W_Rot_brake_total = m_vehicle * f_Rot * a_v_brake_integral / 1e6 # Regenerative Rotational Work (entire vehicle) [MJ]
 
     E_b_total = abs(W_R_brake_total + W_A_brake_total + W_Rot_brake_total + W_L_brake)
     phi_total = E_b_total / (m_vehicle * a_v_integral)
-    W_A_EV_total = W_A_total * (1 - (phi_total * mu))
+    W_A_EV_total = W_A_total * (1 - (phi_total * mu)) # Acceleration Work EV (entire vehicle) [MJ]
 
-    W_mech_EV_total_100km = ((roll_pos_factor * W_R_total) + W_A_EV_total + W_Rot_total + W_L) * (ds_ref / ds)
+    W_mech_EV_total_100km = ((roll_pos_factor * W_R_total) + W_A_EV_total + W_Rot_total + W_L) * (ds_ref / ds)  # Total mechanical Work EV (entire vehicle)
 
     # Differential efficiency factors
     mu_diff_ICV = W_mech_ICV_total_100km / (c_fuel_WLTP * LHV_fuel)
