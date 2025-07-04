@@ -1,5 +1,5 @@
 # LightImpact
-[![PyPI version](https://badge.fury.io/py/lightimpact.svg?v=0.1.2)](https://pypi.org/project/lightimpact/0.1.2/)
+[![PyPI version](https://badge.fury.io/py/lightimpact.svg?v=0.1.3)](https://pypi.org/project/lightimpact/0.1.3/)
 
 **LightImpact** is an open-source Python library for calculating the **Energy Reduction Value (ERV)** of lightweight automotive components applied in both internal combustion vehicles (ICVs) and electric vehicles (EVs), based on WLTP driving cycle data.
 Developed for life cycle assessment (LCA) modeling in the **MM4R** research project at RWTH Aachen University.
@@ -12,13 +12,29 @@ Developed for life cycle assessment (LCA) modeling in the **MM4R** research proj
 - Suitable for integration into LCA workflows
 
 ## Installation
+Make sure you have [Python](https://www.python.org/downloads/) installed. Then, you can install LightImpact as follows:
+
+Either globally on your system:
+
 ```bash
-git clone https://github.com/suzanaostojic/LightImpact-MM4R.git
-cd LightImpact-MM4R
-pip install -e .
+pip3 install lightimpact
+```
+
+Or, if you prefer to install it in a virtual environment:
+
+```bash
+python3 -m venv lightimpact-env
+
+# On MacOS/Linux
+source lightimpact-env/bin/activate
+# On Windows
+lightimpact-env\Scripts\activate
+
+pip install lightimpact
 ```
 
 ## Example Usage
+After installation, you can use LightImpact in your Python scripts. Here's a simple example of how to run a case with custom parameters:
 ```python
 from lightimpact.core import run_lightimpact_case
 
@@ -32,6 +48,8 @@ custom_params = {
 
 run_lightimpact_case("WLTP_data/Time-Speed-Profile_WLTP_Class3b.csv", custom_params)
 ```
+
+Running this code will calculate the total mechanical work, the differential efficiency factor, and ERV for both EV and ICV. It will output the results to the console.
 
 ## License
 Licensed under the MIT License (c) 2025 Suzana Ostojic

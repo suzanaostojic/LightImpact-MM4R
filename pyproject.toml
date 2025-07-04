@@ -1,6 +1,6 @@
 [project]
 name = "lightimpact"
-version = "0.1.2"
+version = "0.1.3"
 description = "A Python library for calculating Energy Reduction Values (ERVs) of lightweight automotive components in ICVs and EVs"
 readme = "README.md"
 license = "MIT"
